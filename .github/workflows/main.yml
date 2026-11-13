@@ -1,0 +1,48 @@
+name: Build Alok Keyboard 2.0
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract ZIP
+        run: |
+          for f in AlokKeyboard*.zip; do
+            if [ -f "$f" ]; then
+              unzip -q "$f" -d extracted
+              break
+            fi
+          done
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Accept SDK Licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Build APK
+        run: |
+          chmod +x extracted/alok_fix/gradlew
+          cd extracted/alok_fix
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlokKeyboard-2.0-APK
+          path: extracted/alok_fix/app/build/outputs/apk/debug/*.apk
